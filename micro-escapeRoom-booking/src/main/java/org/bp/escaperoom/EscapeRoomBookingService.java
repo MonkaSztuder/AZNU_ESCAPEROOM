@@ -29,7 +29,7 @@ public class EscapeRoomBookingService extends RouteBuilder {
 	
 	@org.springframework.beans.factory.annotation.Autowired
 	PaymentService paymentService;
-//
+
 	@org.springframework.beans.factory.annotation.Autowired
 	StateService roomServiceStateService;
 
@@ -38,8 +38,8 @@ public class EscapeRoomBookingService extends RouteBuilder {
 
 	@Override
 	public void configure() throws Exception {
-//		bookRoomExceptionHandlers();
-//		bookRoomServiceExceptionHandlers();
+		bookRoomExceptionHandlers();
+		bookRoomServiceExceptionHandlers();
 		gateway();
 		room();
 		roomService();
@@ -149,7 +149,7 @@ public class EscapeRoomBookingService extends RouteBuilder {
 		    					bi.setCost(new BigDecimal(999));
 		    				}
 		    				else if (difficulty.equals("medium")){
-		    					throw new RoomException("Not room available for "+difficulty);
+		    					throw new RoomException("No room available for difficulty "+difficulty);
 		    				}
 		    				else {
 		    					bi.setCost(new BigDecimal(888));
@@ -162,45 +162,45 @@ public class EscapeRoomBookingService extends RouteBuilder {
 				)
 		.marshal().json()
 		.to("stream:out")
-//		.choice()
-//			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
-//			.to("direct:bookRoomCompensationAction")
-//		.otherwise()
+		.choice()
+			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
+			.to("direct:bookRoomCompensationAction")
+		.otherwise()
 			.setHeader("serviceType", constant("room"))
 			.to("kafka:BookingInfoTopic?brokers=localhost:9092")
-//		.endChoice()
+		.endChoice()
 		;
 
-//		from("kafka:EscapeRoomBookingFailTopic?brokers=localhost:9092").routeId("bookRoomCompensation")
-//		.log("fired bookRoomCompensation")
-//		.unmarshal().json(JsonLibrary.Jackson, ExceptionResponse.class)
-//		.choice()
-//			.when(header("serviceType").isNotEqualTo("room"))
-//		    .process((exchange) -> {
-//				String bookingEscapeRoomId = exchange.getMessage().getHeader("bookingEscapeRoomId", String.class);
-//				ProcessingState previousState = roomStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.CANCEL);
-//				exchange.getMessage().setHeader("previousState", previousState);
-//		    })
-//		    .choice()
-//		    	.when(header("previousState").isEqualTo(ProcessingState.FINISHED))
-//				.to("direct:bookRoomCompensationAction")
-//			.endChoice()
-//		 .endChoice();
-//
-//		from("direct:bookRoomCompensationAction").routeId("bookRoomCompensationAction")
-//		.log("fired bookRoomCompensationAction")
-//		.to("stream:out");
+		from("kafka:EscapeRoomBookingFailTopic?brokers=localhost:9092").routeId("bookRoomCompensation")
+		.log("fired bookRoomCompensation")
+		.unmarshal().json(JsonLibrary.Jackson, ExceptionResponse.class)
+		.choice()
+			.when(header("serviceType").isNotEqualTo("room"))
+		    .process((exchange) -> {
+				String bookingEscapeRoomId = exchange.getMessage().getHeader("bookingEscapeRoomId", String.class);
+				ProcessingState previousState = roomStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.CANCEL);
+				exchange.getMessage().setHeader("previousState", previousState);
+		    })
+		    .choice()
+		    	.when(header("previousState").isEqualTo(ProcessingState.FINISHED))
+				.to("direct:bookRoomCompensationAction")
+			.endChoice()
+		 .endChoice();
+
+		from("direct:bookRoomCompensationAction").routeId("bookRoomCompensationAction")
+		.log("fired bookRoomCompensationAction")
+		.to("stream:out");
 	}
-//
+
 	private void roomService() {
 		from("kafka:EscapeRoomReqTopic?brokers=localhost:9092").routeId("bookRoomService")
 		.log("fired bookRoomService")
 		.unmarshal().json(JsonLibrary.Jackson, BookEscapeRoomRequest.class)
 		.process(
 				(exchange) -> {
-//					String bookingEscapeRoomId = exchange.getMessage().getHeader("bookingEscapeRoomId", String.class);
-//					ProcessingState previousState = roomServiceStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.START);
-//					if (previousState!=ProcessingState.CANCELLED) {
+					String bookingEscapeRoomId = exchange.getMessage().getHeader("bookingEscapeRoomId", String.class);
+					ProcessingState previousState = roomServiceStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.START);
+					if (previousState!=ProcessingState.CANCELLED) {
 		    			BookingInfo bi = new BookingInfo();
 		    			bi.setId(bookingIdentifierService.getBookingIdentifier());
 		    			BookEscapeRoomRequest btr= exchange.getMessage().getBody(BookEscapeRoomRequest.class);
@@ -219,20 +219,20 @@ public class EscapeRoomBookingService extends RouteBuilder {
 		    			}
 
 		    			exchange.getMessage().setBody(bi);
-//		    			previousState = roomServiceStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.FINISH);
-//		    			}
-//					exchange.getMessage().setHeader("previousState", previousState);
+		    			previousState = roomServiceStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.FINISH);
+		    			}
+					exchange.getMessage().setHeader("previousState", previousState);
 				}
 				)
 		.marshal().json()
 		.to("stream:out")
-//		.choice()
-//			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
-//			.to("direct:bookRoomServiceCompensationAction")
-//		.otherwise()
+		.choice()
+			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
+			.to("direct:bookRoomServiceCompensationAction")
+		.otherwise()
 			.setHeader("serviceType", constant("roomService"))
 			.to("kafka:BookingInfoTopic?brokers=localhost:9092")
-//		.endChoice()
+		.endChoice()
 		;
 
 		from("kafka:EscapeRoomBookingFailTopic?brokers=localhost:9092").routeId("bookRoomServiceCompensation")
@@ -289,7 +289,7 @@ public class EscapeRoomBookingService extends RouteBuilder {
 		.choice()
 			.when(header("isReady").isEqualTo(true)).to("direct:finalizePayment")
 		.endChoice();
-//
+
 	from("direct:finalizePayment").routeId("finalizePayment")
 	.log("fired finalizePayment")
 	.process(
@@ -307,11 +307,11 @@ public class EscapeRoomBookingService extends RouteBuilder {
 			)
 	.to("direct:notification")
 	;
-//
+
 	from("direct:notification").routeId("notification")
 	.log("fired notification")
 	.to("stream:out");
-//
+
 		}
 
 
