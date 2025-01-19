@@ -1,0 +1,35 @@
+<wsdl:definitions xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://roomservice.bp.org/" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:ns3="http://schemas.xmlsoap.org/soap/http" xmlns:ns1="http://www.bp.org/room/" name="RoomBookingEndpointService" targetNamespace="http://roomservice.bp.org/">
+    <wsdl:import location="http://localhost:8080/soap-api/service/hotel?wsdl=RoomPortType.wsdl" namespace="http://www.bp.org/room/"> </wsdl:import>
+    <wsdl:binding name="RoomBookingEndpointServiceSoapBinding" type="ns1:RoomPortType">
+        <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+        <wsdl:operation name="cancelBooking">
+            <soap:operation soapAction="http://www.bp.org/room/cancelBooking" style="document"/>
+            <wsdl:input name="cancelBooking">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="cancelBookingResponse">
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="FaultMsg">
+                <soap:fault name="FaultMsg" use="literal"/>
+            </wsdl:fault>
+        </wsdl:operation>
+        <wsdl:operation name="bookRoom">
+            <soap:operation soapAction="http://www.bp.org/room/bookRoom" style="document"/>
+            <wsdl:input name="bookRoom">
+                <soap:body use="literal"/>
+            </wsdl:input>
+            <wsdl:output name="bookRoomResponse">
+                <soap:body use="literal"/>
+            </wsdl:output>
+            <wsdl:fault name="FaultMsg">
+                <soap:fault name="FaultMsg" use="literal"/>
+            </wsdl:fault>
+        </wsdl:operation>
+    </wsdl:binding>
+    <wsdl:service name="RoomBookingEndpointService">
+        <wsdl:port binding="tns:RoomBookingEndpointServiceSoapBinding" name="RoomBookingEndpointPort">
+            <soap:address location="http://localhost:8080/soap-api/service/hotel"/>
+        </wsdl:port>
+    </wsdl:service>
+</wsdl:definitions>
