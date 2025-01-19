@@ -40,6 +40,7 @@ public class EscapeRoomBookingService extends RouteBuilder {
 	public void configure() throws Exception {
 		bookRoomExceptionHandlers();
 		bookRoomServiceExceptionHandlers();
+		complete();
 		gateway();
 		room();
 		roomService();
@@ -161,10 +162,10 @@ public class EscapeRoomBookingService extends RouteBuilder {
 					exchange.getMessage().setHeader("previousState", previousState);        		}
 				)
 		.marshal().json()
-		.to("stream:out")
+				.to("stream:out")
 		.choice()
 			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
-			.to("direct:bookRoomCompensationAction")
+				.to("direct:bookRoomCompensationAction")
 		.otherwise()
 			.setHeader("serviceType", constant("room"))
 			.to("kafka:BookingInfoTopic?brokers=localhost:9092")
@@ -229,7 +230,7 @@ public class EscapeRoomBookingService extends RouteBuilder {
 		.choice()
 			.when(header("previousState").isEqualTo(ProcessingState.CANCELLED))
 			.to("direct:bookRoomServiceCompensationAction")
-		.otherwise()
+				.otherwise()
 			.setHeader("serviceType", constant("roomService"))
 			.to("kafka:BookingInfoTopic?brokers=localhost:9092")
 		.endChoice()
@@ -248,12 +249,13 @@ public class EscapeRoomBookingService extends RouteBuilder {
             .choice()
             	.when(header("previousState").isEqualTo(ProcessingState.FINISHED))
     			.to("direct:bookRoomServiceCompensationAction")
-    		.endChoice()
+				.endChoice()
          .endChoice();
 
 		from("direct:bookRoomServiceCompensationAction").routeId("bookRoomServiceCompensationAction")
 		.log("fired bookRoomServiceCompensationAction")
-		.to("stream:out");
+				.to("stream:out");
+
 	}
 
 	private void payment() {
@@ -310,9 +312,27 @@ public class EscapeRoomBookingService extends RouteBuilder {
 
 	from("direct:notification").routeId("notification")
 	.log("fired notification")
+	.to("direct:completeBooking")
 	.to("stream:out");
 
-		}
-
-
+	}
+	private void complete() {
+		from("direct:completeBooking").routeId("completeBooking")
+				.log("completeBooking fired")
+				.process((exchange) -> {
+					String bookingEscapeRoomId = exchange.getMessage().getHeader("bookingEscapeRoomId", String.class);
+					ProcessingState previousState = roomStateService.sendEvent(bookingEscapeRoomId, ProcessingEvent.COMPLETE);
+					if (previousState == ProcessingState.FINISHED || previousState == ProcessingState.CANCELLED) {
+						roomStateService.removeState(bookingEscapeRoomId);
+					}
+					exchange.getMessage().setHeader("previousState", previousState);
+				})
+				.log("Previous state: ${header.previousState}")
+				.choice()
+					.when(header("previousState").isEqualTo(ProcessingState.FINISHED))
+						.log("Booking completed and state machine removed")
+				.otherwise()
+					.log("Failed to complete booking")
+				.endChoice();
+	}
 }

@@ -53,9 +53,8 @@ public class PaymentService {
 		return paymentData;
 	}
 
-	
+	public void compensateBooking(String bookingId) {
 
-
-	
+	}
 
 }
