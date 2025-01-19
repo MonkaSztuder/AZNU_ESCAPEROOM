@@ -1,0 +1,48 @@
+version: '2'
+services:
+  zookeeper:
+    image: wurstmeister/zookeeper
+    ports:
+      - "2181:2181"
+  kafka:
+    image: wurstmeister/kafka 
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper
+    environment:
+      KAFKA_ADVERTISED_HOST_NAME: kafka
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+  gateway:
+    image: micro-escaperoom-booking:0.0.1-SNAPSHOT
+    ports:
+      - "8090:8090"
+    depends_on:
+      - kafka
+    environment:
+      ESCAPEROOM_KAFKA_SERVER: kafka:9092
+      ESCAPEROOM_SERVICE_TYPE: gateway
+  room:
+    image: micro-escaperoom-booking:0.0.1-SNAPSHOT
+    depends_on:
+      - kafka
+    environment:
+      ESCAPEROOM_KAFKA_SERVER: kafka:9092
+      ESCAPEROOM_SERVICE_TYPE: room
+  roomService:
+    image: micro-escaperoom-booking:0.0.1-SNAPSHOT
+    depends_on:
+      - kafka
+    environment:
+      ESCAPEROOM_KAFKA_SERVER: kafka:9092
+      ESCAPEROOM_SERVICE_TYPE: roomService
+  payment:
+    image: micro-escaperoom-booking:0.0.1-SNAPSHOT
+    depends_on:
+      - kafka
+    environment:
+      ESCAPEROOM_KAFKA_SERVER: kafka:9092
+      ESCAPEROOM_SERVICE_TYPE: payment
+

@@ -9,7 +9,7 @@
 		<relativePath/> <!-- lookup parent from repository -->
 	</parent>
 	<groupId>org.bp</groupId>
-	<artifactId>micro-escapeRoom-booking</artifactId>
+	<artifactId>micro-escaperoom-booking</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>micro-travel-booking</name>
 	<description>Booking of escape room using microservices</description>
